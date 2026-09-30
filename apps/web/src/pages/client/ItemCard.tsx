@@ -58,6 +58,10 @@ interface ItemCardProps {
   // Só usado no item de vídeo: devolve o stream da própria câmera (já em uso na
   // chamada) pra mostrar um espelho na tela, o cliente vendo o próprio ângulo.
   getSelfStream?: () => MediaStream | null;
+  // Na sala de atendimento (chamada), áudio/vídeo são sempre gravados pelo consultor
+  // direto da chamada — o cliente não tem opção de gravar/enviar esses dois por conta
+  // própria (evita duplicar o fluxo e o cliente gravar algo que ninguém vai usar).
+  agentRecordsMedia?: boolean;
 }
 
 export function ItemCard({
@@ -69,6 +73,7 @@ export function ItemCard({
   captureActive,
   captureCountdown,
   getSelfStream,
+  agentRecordsMedia,
 }: ItemCardProps) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -92,12 +97,15 @@ export function ItemCard({
   const approved = item.status === "APPROVED";
   const pendingReview = item.status === "UPLOADED";
   const done = pendingReview || approved;
-  // Itens "multiple" (ex: várias fotos do mesmo documento) continuam permitindo
-  // adicionar mais arquivos mesmo depois de já ter algo enviado/em análise/aprovado.
-  const canOpen = !done || item.multiple;
   const video = isVideoType(item.type);
   const audio = isAudioType(item.type);
   const pdfOnly = isPdfOnlyType(item.type);
+  // Áudio/vídeo gravados pelo consultor: o cliente só acompanha o status, sem poder
+  // abrir o card pra gravar/enviar por conta própria.
+  const clientCanSelfRecord = !(agentRecordsMedia && (video || audio));
+  // Itens "multiple" (ex: várias fotos do mesmo documento) continuam permitindo
+  // adicionar mais arquivos mesmo depois de já ter algo enviado/em análise/aprovado.
+  const canOpen = clientCanSelfRecord && (!done || item.multiple);
 
   useEffect(() => {
     return () => {
@@ -250,6 +258,8 @@ export function ItemCard({
               ? item.multiple && item.media.length > 0
                 ? `${item.media.length} arquivo${item.media.length > 1 ? "s" : ""} enviado${item.media.length > 1 ? "s" : ""} — em análise`
                 : "Em análise"
+              : !clientCanSelfRecord
+              ? `${video ? "Vídeo" : "Áudio"} gravado pelo consultor durante a chamada`
               : item.description}
           </p>
         </div>

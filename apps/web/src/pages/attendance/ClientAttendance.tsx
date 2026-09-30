@@ -347,6 +347,7 @@ export function ClientAttendance({ collectionId, token }: ClientAttendanceProps)
                           captureActive={activeCaptureItemId === item.id}
                           captureCountdown={activeCaptureItemId === item.id ? captureCountdown : null}
                           getSelfStream={() => session.localVideoRef.current?.srcObject as MediaStream | null}
+                          agentRecordsMedia
                         />
                       )}
                     </div>
